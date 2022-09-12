@@ -26,26 +26,14 @@ pipeline {
         }
         stage ('lib call'){
             steps{
-                //helloWorld(name:"Nevin",dayOfWeek:"Monday")
                  withCredentials([usernamePassword(credentialsId: 'phire_api_cred', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]){
-                     println env.USERNAME
-                     println env.USERPASS
                      script{
                      uname = env.USERNAME
                      pwd = env.USERPASS
                      
                      }
-                     //jsonMessage(uname,pwd)
-                     //jsonMessage()
-                    //
-                    //println uname
-                    //println pwd
                  }
-                //println TICKET_ID + " "+  PHIRE_NUM +  " " + REQUEST_USER
-                //PhireRequest(uname, pwd, PHIRE_NUM, TICKET_STATUS, ISSUE_ASSIGNEE, ISSUE_ASSIGNEE_EMAIL, 'S', TICKET_ID, LAST_COMMENT_BODY, REQUEST_USER, REQUEST_USER_EMAIL, 'http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/')
-                //println "Jira value is: " + JIRA_ISSUE_KEY
-                //println "assignee  is: " + ISSUE_ASSIGNEE
-                //jsonMessage(uname,pwd)
+                PhireRequest(uname, pwd, PHIRE_NUM, TICKET_STATUS, ISSUE_ASSIGNEE, ISSUE_ASSIGNEE_EMAIL, 'S', TICKET_ID, LAST_COMMENT_BODY, REQUEST_USER, REQUEST_USER_EMAIL, 'http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/')
             }                
             
         }
@@ -54,6 +42,7 @@ pipeline {
                 script {
             if (buildInfra == 'Yes') 
                  {
+                     echo 'buildInfra - Yes'
                 //def fixedInBuild = [fields: [customfield_10011: 'Build is successful. Find additional comments in Comment Box']]
                 //def transitionInput = [transition: [id: '61']]
                 //jiraTransitionIssue idOrKey: JIRA_ISSUE_KEY, input: transitionInput, site: 'JIRA'
@@ -65,6 +54,7 @@ pipeline {
                 }
             else 
             {
+                echo 'buildInfra - No'
                 //def fixedInBuild = [fields: [customfield_10011: 'Build Failed. Find reasons in Comment Box']]
                 def transitionInput = [transition: [id: '41']]
                // jiraTransitionIssue idOrKey: JIRA_ISSUE_KEY, input: transitionInput, site: 'JIRA'
