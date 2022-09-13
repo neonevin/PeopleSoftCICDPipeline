@@ -57,7 +57,7 @@ pipeline {
                 //messaging = input message: 'Any additional comments?', parameters: [text(defaultValue: '', description: 'Enter any additional comments', name: 'COMMENT')]
                 messaging = 'Phire step completed for ' + PHIRE_NUM
                 //jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
-                jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
+                //jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
                 }
             else 
             {
@@ -68,7 +68,7 @@ pipeline {
                // jiraEditIssue idOrKey: JIRA_ISSUE_KEY, issue: fixedInBuild, site: 'JIRA'
                 //messaging = input message: 'Why did the build fail?', parameters: [text(defaultValue: '', description: 'Enter reasons for build failure', name: 'COMMENT')]
                 messaging = 'Phire step completed for ' + PHIRE_NUM
-                jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
+                //jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
             }
            }       
           }
