@@ -1,13 +1,14 @@
-@Library("test-lib") _
+@Library("dev-lib") _
 def uname
 def pwd
+def strComment
 pipeline {
     agent any
 
     stages {
         stage('Hello') {
             steps {
-                echo 'Hello World'
+                echo 'Dev pipeline'
             }
         }
                 stage ("Update build status"){
@@ -26,26 +27,22 @@ pipeline {
         }
         stage ('lib call'){
             steps{
-                //helloWorld(name:"Nevin",dayOfWeek:"Monday")
                  withCredentials([usernamePassword(credentialsId: 'phire_api_cred', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]){
-                     println env.USERNAME
-                     println env.USERPASS
                      script{
                      uname = env.USERNAME
                      pwd = env.USERPASS
                      
                      }
-                     //jsonMessage(uname,pwd)
-                     //jsonMessage()
-                    //
-                    //println uname
-                    //println pwd
                  }
-                //println TICKET_ID + " "+  PHIRE_NUM +  " " + REQUEST_USER
-                PhireRequest(uname, pwd, PHIRE_NUM, TICKET_STATUS, ISSUE_ASSIGNEE, ISSUE_ASSIGNEE_EMAIL, 'S', TICKET_ID, LAST_COMMENT_BODY, REQUEST_USER, REQUEST_USER_EMAIL, 'http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/')
-                //println "Jira value is: " + JIRA_ISSUE_KEY
-                //println "assignee  is: " + ISSUE_ASSIGNEE
-                //jsonMessage(uname,pwd)
+                 script{
+                    strComment=PhireRequest(uname, pwd, PHIRE_NUM, TICKET_STATUS, ISSUE_ASSIGNEE, ISSUE_ASSIGNEE_EMAIL, 'S', TICKET_ID, LAST_COMMENT_BODY, REQUEST_USER, REQUEST_USER_EMAIL, 'http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/')
+                 }                /*def args2 =[
+                    "userid":uname, "pswd":pwd, "phire_num":PHIRE_NUM, "tkt_status":TICKET_STATUS, "tkt_asgne":ISSUE_ASSIGNEE,
+                    "tkt_asgn_email":ISSUE_ASSIGNEE_EMAIL, "mig_type": "S", "tkt_id": TICKET_ID, "tkt_lst_cmt":LAST_COMMENT_BODY,
+                    "req_usr":REQUEST_USER, "req_email":REQUEST_USER_EMAIL,
+                    "url":"http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/"
+                    ]
+                PhireRequest(args2, jenkinsWorkflowScript:this)*/
             }                
             
         }
@@ -54,6 +51,7 @@ pipeline {
                 script {
             if (buildInfra == 'Yes') 
                  {
+                     echo 'buildInfra - Yes'
                 //def fixedInBuild = [fields: [customfield_10011: 'Build is successful. Find additional comments in Comment Box']]
                 //def transitionInput = [transition: [id: '61']]
                 //jiraTransitionIssue idOrKey: JIRA_ISSUE_KEY, input: transitionInput, site: 'JIRA'
@@ -61,17 +59,19 @@ pipeline {
                 //messaging = input message: 'Any additional comments?', parameters: [text(defaultValue: '', description: 'Enter any additional comments', name: 'COMMENT')]
                 messaging = 'Phire step completed for ' + PHIRE_NUM
                 //jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
-                jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
+                jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
                 }
             else 
             {
+                echo 'buildInfra - No'
                 //def fixedInBuild = [fields: [customfield_10011: 'Build Failed. Find reasons in Comment Box']]
                 def transitionInput = [transition: [id: '41']]
                // jiraTransitionIssue idOrKey: JIRA_ISSUE_KEY, input: transitionInput, site: 'JIRA'
                // jiraEditIssue idOrKey: JIRA_ISSUE_KEY, issue: fixedInBuild, site: 'JIRA'
                 //messaging = input message: 'Why did the build fail?', parameters: [text(defaultValue: '', description: 'Enter reasons for build failure', name: 'COMMENT')]
                 messaging = 'Phire step completed for ' + PHIRE_NUM
-                jiraAddComment comment: messaging, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
+                jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JiraSSL'
+                println strComment
             }
            }       
           }
