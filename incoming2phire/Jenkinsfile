@@ -1,4 +1,4 @@
-@Library("dev-lib") _
+@Library("test-lib") _
 def uname
 def pwd
 def strComment
