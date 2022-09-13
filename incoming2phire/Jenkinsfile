@@ -1,6 +1,7 @@
 @Library("dev-lib") _
 def uname
 def pwd
+def strComment
 pipeline {
     agent any
 
