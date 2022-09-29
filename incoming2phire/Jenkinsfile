@@ -36,7 +36,8 @@ pipeline {
                      }
                  }
                  script{
-                    strComment=PhireRequest(uname, pwd, PHIRE_NUM, TICKET_STATUS, ISSUE_ASSIGNEE, ISSUE_ASSIGNEE_EMAIL, 'S', TICKET_ID, LAST_COMMENT_BODY, REQUEST_USER, REQUEST_USER_EMAIL, 'http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/')
+                    //call( userid,  password,  phireTktId,  ticketPrjId,  ticketAppId,  ticketType,  tktStatus,  tktAssignee,  tktAssigneeEmail,  phiMigrType,  tktId,  lastCmmt,  phiTitle,  rqstUsr,  rqstEmail,  url) {
+                    strComment=PhireRequest(uname, pwd, PHIRE_NUM, TICKET_PROJECT, APP, CR_TYPE, TICKET_STATUS, ISSUE_ASSIGNEE, ISSUE_ASSIGNEE_EMAIL, 'S', TICKET_ID, LAST_COMMENT_BODY, SUMMARY, REQUEST_USER, REQUEST_USER_EMAIL, 'http://140.238.207.38:8000//PSIGW/RESTListeningConnector/PSFT_HR/DEL_API_CR_NEXT_STEP.v1/')
                  }                /*def args2 =[
                     "userid":uname, "pswd":pwd, "phire_num":PHIRE_NUM, "tkt_status":TICKET_STATUS, "tkt_asgne":ISSUE_ASSIGNEE,
                     "tkt_asgn_email":ISSUE_ASSIGNEE_EMAIL, "mig_type": "S", "tkt_id": TICKET_ID, "tkt_lst_cmt":LAST_COMMENT_BODY,
