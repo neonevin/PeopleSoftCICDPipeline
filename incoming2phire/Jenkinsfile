@@ -1,12 +1,13 @@
-@Library("test-lib") _
+@Library("test-lib")
 def uname
 def pwd
 def strComment
-def dtt_phi_rsp=[:]
-def dtt_phi_callbk=[:]
+def dtt_phi_rsp = [:]
+def dtt_phi_callbk = [:]
 def callBackURLIndex
 def boolean skipTest
 def boolean skipMigr
+def Map comment = [:]
 
 pipeline {
     agent any
@@ -21,6 +22,9 @@ pipeline {
                         callBackURLIndex = UUID.randomUUID().toString()
                         skipTest = true
                         skipMigr = true
+                        comment = [body : ' ']
+                        EXEC_TEST = "Y"
+                        TEST_CASE = "PSFT1001,PSFT1002"
                     }
                 }
             }
@@ -41,23 +45,25 @@ pipeline {
             }
         }
         stage('Migrate') {
-            //if (dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_ACTION_TYPE == 'MIGR' && dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.PHI_HAS_ERROR == false){
-            if (skipMigr){
-                echo 'No migration as per Phire response, skipping migration and test stages...'
-                Utils.markStageSkippedForConditional('Migrate')
-                return
-            }
+            when {expression {skipMigr != true}}
             steps {
                 echo 'Commencing stage -  Migrate change...'
                 script {
-                    //if (dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_ACTION_TYPE == 'MIGR' && dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.PHI_HAS_ERROR == false){
+                    if (skipMigr){
+                        echo 'No migration as per Phire response, skipping migration and test stages...'
+                        Utils.markStageSkippedForConditional(STAGE_NAME)
+                        echo "return..."
+                        return
+                    }
                         // send status to Jira
                     strComment=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_PHI_RESP_TEXT
                     // add comment to Jira with response from Phire - (usually 'Migratoin queued')
-                    jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                    comment.body = strComment
+                    //jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                    jiraAddComment input: comment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
                     // wait for migration status update via call back from phire
                     //hook = registerWebhook(token: "migration_status")
-                    hook = registerWebhook(callBackURLIndex)
+                    hook = registerWebhook(token: callBackURLIndex)
                     echo "Waiting for POST to ${hook.url}"
                     def data = waitForWebhook hook
                     echo "Webhook called with data: ${data}"
@@ -73,50 +79,56 @@ pipeline {
                     } else{
                         strComment = "${strComment} - No test case(s) identified for execution or Test execution is disabled"
                     }
-                    jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                    comment.body = strComment
+                    jiraAddComment input: comment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
                     //}
                 }
             }
         }
         stage('Test') {
-            //if (dtt_phi_callbk.PHI_CALLBACK_REQ.DTTL_TEST_STATUS == 'Pending'){
-            if (skipTest){
-                echo 'No test execution as per Phire response, skipping test execution stage...'
-                Utils.markStageSkippedForConditional('Test')
-                return
-            }
+            when {expression {skipTest != true}}
             steps {
                 echo 'Commencing stage - Test...'
-                hook = registerWebhook(callBackURLIndex)
-                echo "Waiting for POST to ${hook.url}"
-                def data = waitForWebhook hook
-                echo "Webhook called with data: ${data}"
-                // process call back request - add comment to Jira
-                dtt_phi_callbk=PhireCallBackReq(data)
-                 if (dtt_phi_callbk.PHI_CALLBACK_REQ.DTTL_TEST_STATUS == 'Completed'){
-                    strComment = dtt_phi_callbk.PHI_CALLBACK_REQ.PHI_ACTION_DESCR
-                    jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                script{
+                    if (skipTest){
+                        echo 'No test execution as per Phire response, skipping test execution stage...'
+                        Utils.markStageSkippedForConditional(STAGE_NAME)
+                        return
+                    }
+                    //hook = registerWebhook(callBackURLIndex)
+                    echo "Waiting for POST to ${hook.url}"
+                    def data = waitForWebhook hook
+                    echo "Webhook called with data: ${data}"
+                    // process call back request - add comment to Jira
+                    dtt_phi_callbk=PhireCallBackReq(data)
+                    if (dtt_phi_callbk.PHI_CALLBACK_REQ.DTTL_TEST_STATUS == 'Completed'){
+                        strComment = dtt_phi_callbk.PHI_CALLBACK_REQ.PHI_ACTION_DESCR
+                        comment.body = strComment
+                        jiraAddComment input: comment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                    }
                 }
             }
         }
         stage('update status'){
             steps{
-                echo 'update status...'
-                // if Phire Cr created
-                if (dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_ACTION_TYPE =="CRTE" && dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.PHI_HAS_ERROR == false) {
-                    testIssue.fields.customfield_10044=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.PHI_CR_NUM
-                    response = jiraEditIssue idOrKey: TICKET_ID, issue: testIssue, site: 'JIRACloud'
-                    strComment=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_PHI_RESP_TEXT  
-                    echo response.successful.toString()
-                    echo response.data.toString()
-                    echo "testIssue Map: ${testIssue}"
-                }
-                if (dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_ACTION_TYPE !="MIGR" ) {
-                    strComment=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_PHI_RESP_TEXT
-                    jiraAddComment comment: strComment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                script{
+                    echo 'update status...'
+                    // if Phire Cr created
+                    if (dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_ACTION_TYPE =="CRTE" && dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.PHI_HAS_ERROR == false) {
+                        testIssue.fields.customfield_10044=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.PHI_CR_NUM
+                        response = jiraEditIssue idOrKey: TICKET_ID, issue: testIssue, site: 'JIRACloud'
+                        strComment=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_PHI_RESP_TEXT  
+                        echo response.successful.toString()
+                        echo response.data.toString()
+                        echo "testIssue Map: ${testIssue}"
+                    }
+                    if (dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_ACTION_TYPE !="MIGR" ) {
+                        strComment=dtt_phi_rsp.CR_TASK_NEXT_STEP_RSP.DTTL_PHI_RESP_TEXT
+                        comment.body = strComment
+                        jiraAddComment input: comment, idOrKey: JIRA_ISSUE_KEY, site: 'JIRACloud'
+                    }
                 }
             }
         }
-
     }
 }
